@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crop Recommendation System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+</head>
+
+<body>
+    <div class="background-pattern"></div>
+
+    <div class="container">
+        <div class="header">
+            <h1>Smart Crop Recommendation</h1>
+        </div>
+
+        <form id="cropForm" class="form-container">
+            <div class="form-row">
+                <div class="input-group">
+                    <label>Nitrogen (N)</label>
+                    <input type="number" step="0.01" name="N" placeholder="Enter nitrogen level" required>
+                </div>
+
+                <div class="input-group">
+                    <label>Phosphorus (P)</label>
+                    <input type="number" step="0.01" name="P" placeholder="Enter phosphorus level" required>
+                </div>
+
+                <div class="input-group">
+                    <label>Potassium (K)</label>
+                    <input type="number" step="0.01" name="K" placeholder="Enter potassium level" required>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="input-group">
+                    <label>Temperature</label>
+                    <input type="number" step="0.01" name="temperature" placeholder="Enter temperature" required>
+                </div>
+
+                <div class="input-group">
+                    <label>Humidity</label>
+                    <input type="number" step="0.01" name="humidity" placeholder="Enter humidity level" required>
+                </div>
+
+                <div class="input-group">
+                    <label>pH Level</label>
+                    <input type="number" step="0.01" name="ph" placeholder="Enter pH value" required>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="input-group full-width">
+                    <label>Rainfall</label>
+                    <input type="number" step="0.01" name="rainfall" placeholder="Enter rainfall amount" required>
+                </div>
+            </div>
+
+            <div class="button-wrapper">
+                <button type="button" id="clearBtn" class="clear-btn">
+                    Clear All
+                    <div class="btn-shine"></div>
+                </button>
+                <button type="submit" class="predict-btn">
+                    Get Recommendation
+                    <div class="btn-shine"></div>
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Enhanced Popup Modal -->
+    <div id="popup" class="popup">
+        <div class="popup-content">
+            <div class="popup-header">
+                <h2 id="cropName">Recommended Crop</h2>
+            </div>
+            <div class="popup-body">
+                <div class="crop-result" id="cropResult"></div>
+                <div class="confidence-bar">
+                    <span class="confidence-label">Confidence Level</span>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <span id="confidence" class="confidence-text"></span>
+                </div>
+            </div>
+            <div class="popup-footer">
+                <button id="closePopup" class="close-btn">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('cropForm');
+        const popup = document.getElementById('popup');
+        const cropName = document.getElementById('cropName');
+        const confidence = document.getElementById('confidence');
+        const closePopup = document.getElementById('closePopup');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData.entries());
+
+            const response = await fetch('/predict', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+
+            if (result.error) {
+                document.querySelector('.popup-header').style.background = 'linear-gradient(135deg, #ff6b6b, #ee5a52)';
+                cropName.textContent = "Error Occurred";
+                document.getElementById('cropResult').textContent = result.error;
+                document.querySelector('.confidence-bar').style.display = 'none';
+            } else {
+                document.querySelector('.popup-header').style.background = 'linear-gradient(135deg, #4CAF50, #45a049)';
+                cropName.textContent = "Recommended Crop";
+                document.getElementById('cropResult').textContent = result.crop;
+                document.querySelector('.confidence-bar').style.display = 'block';
+                confidence.textContent = result.confidence + "%";
+
+                // Animate progress bar
+                const progressFill = document.getElementById('progressFill');
+                progressFill.style.width = '0%';
+                setTimeout(() => {
+                    progressFill.style.width = result.confidence + '%';
+                }, 300);
+            }
+
+            popup.style.display = 'flex';
+        });
+
+        closePopup.addEventListener('click', () => {
+            popup.style.display = 'none';
+        });
+
+        // Clear button functionality
+        document.getElementById('clearBtn').addEventListener('click', () => {
+            form.reset();
+        });
+    </script>
+</body>
+
+</html>
