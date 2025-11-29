@@ -104,11 +104,54 @@
         const confidence = document.getElementById('confidence');
         const closePopup = document.getElementById('closePopup');
 
+        // Dataset ranges for validation
+        const validRanges = {
+            N: { min: -9.897950, max: 297.166279, name: 'Nitrogen' },
+            P: { min: -9.975265, max: 273.511549, name: 'Phosphorus' },
+            K: { min: -5.099612, max: 549.300000, name: 'Potassium' },
+            temperature: { min: -4.798749, max: 59.262169, name: 'Temperature' },
+            humidity: { min: 7.513541, max: 119.192052, name: 'Humidity' },
+            ph: { min: 1.213481, max: 13.871917, name: 'pH Level' },
+            rainfall: { min: 0.278578, max: 789.571934, name: 'Rainfall' }
+        };
+
+        // Function to validate input ranges
+        function validateInputs(data) {
+            const warnings = [];
+
+            for (const [key, value] of Object.entries(data)) {
+                const numValue = parseFloat(value);
+                const range = validRanges[key];
+
+                if (range) {
+                    if (numValue < range.min) {
+                        warnings.push(`${range.name} value (${numValue}) is below the minimum expected range (${range.min.toFixed(2)})`);
+                    } else if (numValue > range.max) {
+                        warnings.push(`${range.name} value (${numValue}) is above the maximum expected range (${range.max.toFixed(2)})`);
+                    }
+                }
+            }
+
+            return warnings;
+        }
+
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
 
             const formData = new FormData(form);
             const data = Object.fromEntries(formData.entries());
+
+            // Validate input ranges
+            const warnings = validateInputs(data);
+
+            if (warnings.length > 0) {
+                const warningMessage = 'INPUT VALIDATION ERROR:\n\nThe following values are outside the expected range:\n\n' +
+                    warnings.map(warning => `• ${warning}`).join('\n') +
+                    '\n\nPlease correct these values to get an accurate crop recommendation.\n\nValid ranges are based on the training dataset.';
+
+                alert(warningMessage);
+                return; // Stop submission - no crop recommendation for invalid inputs
+            }
 
             const response = await fetch('/predict', {
                 method: 'POST',
